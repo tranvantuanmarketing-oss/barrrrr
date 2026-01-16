@@ -2,56 +2,41 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Titan Dashboard - Quản Trị Club</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Titan Dashboard - Mobile Optimized</title>
     
-    <!-- 1. Thư viện React & ReactDOM (Core) -->
+    <!-- Core Libraries -->
     <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-    
-    <!-- 2. Babel để xử lý JSX ngay trên trình duyệt -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- 3. Tailwind CSS cho giao diện -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- 4. Prop-Types (Bắt buộc cho Recharts bản UMD) -->
     <script src="https://unpkg.com/prop-types/prop-types.min.js"></script>
-
-    <!-- 5. Thư viện Biểu đồ Recharts -->
     <script src="https://unpkg.com/recharts@2.10.3/umd/Recharts.js"></script>
 
     <style>
-        body { font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
-        
-        /* Custom Scrollbar cho nền tối */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        body { font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
-        
-        /* Hiệu ứng Fade In */
-        .animate-fade-in { animation: fadeIn 0.4s ease-out; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Mobile Overlay Transition */
+        .sidebar-overlay { transition: opacity 0.3s ease; }
+        .sidebar-menu { transition: transform 0.3s ease; }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 h-screen overflow-hidden">
+<body class="bg-slate-900 text-slate-100 h-screen overflow-hidden selection:bg-indigo-500 selection:text-white">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
-        
-        // Kiểm tra Recharts để tránh lỗi màn hình trắng
-        if (!window.Recharts) {
-            document.getElementById('root').innerHTML = '<div style="color:white; padding: 20px;">Đang tải thư viện... Nếu quá lâu, vui lòng reload.</div>';
-        }
-
         const { 
             BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
             LineChart, Line, PieChart, Pie, Cell, AreaChart, Area 
-        } = window.Recharts;
+        } = window.Recharts || {};
 
-        // --- ICONS (SVG) ---
+        // --- ICONS ---
         const Icons = {
             LayoutDashboard: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>,
             TrendingUp: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>,
@@ -66,24 +51,25 @@
             Clock: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
             UserPlus: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>,
             X: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
-            LogOut: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+            LogOut: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>,
+            ChevronLeft: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         };
 
-        // --- MOCK DATA ---
+        // --- DATA MOCK ---
         const INITIAL_STAFF = [
-            { id: 1, name: "Tuấn Tiger", role: "Sales", shift: "Ca 1 (18h-22h)", revenue: 45000000, bookings: 5, tasks: 90, kpi: 90, avatar: "T" },
-            { id: 2, name: "Lan VIP", role: "Sales", shift: "Ca 2 (22h-02h)", revenue: 82000000, bookings: 12, tasks: 100, kpi: 110, avatar: "L" },
-            { id: 3, name: "Hùng Bar", role: "Bartender", shift: "Ca 1 (18h-22h)", revenue: 12000000, bookings: 0, tasks: 100, kpi: 100, avatar: "H" },
-            { id: 4, name: "My Sales", role: "Sales", shift: "Ca 2 (22h-02h)", revenue: 28000000, bookings: 4, tasks: 70, kpi: 60, avatar: "M" },
-            { id: 5, name: "Ken Z", role: "DJ", shift: "Ca 3 (02h-Close)", revenue: 0, bookings: 0, tasks: 95, kpi: 95, avatar: "K" },
-            { id: 6, name: "Sarah", role: "Sales", shift: "Ca 3 (02h-Close)", revenue: 35000000, bookings: 6, tasks: 85, kpi: 80, avatar: "S" },
+            { id: 1, name: "Tuấn Tiger", role: "Sales", shift: "Ca 1", revenue: 45000000, bookings: 5, tasks: 90, kpi: 90, avatar: "T" },
+            { id: 2, name: "Lan VIP", role: "Sales", shift: "Ca 2", revenue: 82000000, bookings: 12, tasks: 100, kpi: 110, avatar: "L" },
+            { id: 3, name: "Hùng Bar", role: "Bartender", shift: "Ca 1", revenue: 12000000, bookings: 0, tasks: 100, kpi: 100, avatar: "H" },
+            { id: 4, name: "My Sales", role: "Sales", shift: "Ca 2", revenue: 28000000, bookings: 4, tasks: 70, kpi: 60, avatar: "M" },
+            { id: 5, name: "Ken Z", role: "DJ", shift: "Ca 3", revenue: 0, bookings: 0, tasks: 95, kpi: 95, avatar: "K" },
+            { id: 6, name: "Sarah", role: "Sales", shift: "Ca 3", revenue: 35000000, bookings: 6, tasks: 85, kpi: 80, avatar: "S" },
         ];
 
         const INITIAL_MENU = [
-            { id: 1, name: "Combo Hennesy VSOP", category: "Rượu", price: 3500000, qty: 15, revenue: 52500000, trend: "up" },
-            { id: 2, name: "Trái cây thập cẩm", category: "Đồ ăn", price: 350000, qty: 40, revenue: 14000000, trend: "stable" },
-            { id: 3, name: "Cocktail Signature A", category: "Đồ uống", price: 250000, qty: 8, revenue: 2000000, trend: "down" },
-            { id: 4, name: "Bóng cười (Combo)", category: "Dịch vụ", price: 500000, qty: 50, revenue: 25000000, trend: "up" },
+            { id: 1, name: "Combo Hennesy", category: "Rượu", price: 3500000, qty: 15, revenue: 52500000, trend: "up" },
+            { id: 2, name: "Trái cây VIP", category: "Đồ ăn", price: 350000, qty: 40, revenue: 14000000, trend: "stable" },
+            { id: 3, name: "Cocktail Sig", category: "Đồ uống", price: 250000, qty: 8, revenue: 2000000, trend: "down" },
+            { id: 4, name: "Bóng cười", category: "Dịch vụ", price: 500000, qty: 50, revenue: 25000000, trend: "up" },
             { id: 5, name: "Khoai tây chiên", category: "Đồ ăn", price: 90000, qty: 5, revenue: 450000, trend: "down" },
             { id: 6, name: "Macallan 12", category: "Rượu", price: 4200000, qty: 10, revenue: 42000000, trend: "up" },
         ];
@@ -99,18 +85,18 @@
         }));
 
         const INITIAL_TASKS = [
-            { id: 1, title: "Gọi lại khách VIP bàn 3", assignee: "Tuấn Tiger", assigner: "Lê Minh (Boss)", status: "todo", priority: "high", deadline: "22:00" },
-            { id: 2, title: "Kiểm kê kho rượu mạnh", assignee: "Hùng Bar", assigner: "Phạm Hùng (QL)", status: "doing", priority: "medium", deadline: "20:00" },
-            { id: 3, title: "Setup bàn tiệc sinh nhật", assignee: "My Sales", assigner: "Phạm Hùng (QL)", status: "done", priority: "high", deadline: "19:00" },
+            { id: 1, title: "Gọi lại khách VIP bàn 3", assignee: "Tuấn Tiger", assigner: "Lê Minh", status: "todo", priority: "high", deadline: "22:00" },
+            { id: 2, title: "Kiểm kê kho rượu", assignee: "Hùng Bar", assigner: "Phạm Hùng", status: "doing", priority: "medium", deadline: "20:00" },
+            { id: 3, title: "Setup tiệc sinh nhật", assignee: "My Sales", assigner: "Phạm Hùng", status: "done", priority: "high", deadline: "19:00" },
         ];
 
         const INITIAL_EXPENSES = [
             { id: 1, type: "Nhập hàng", desc: "Nhập rượu kho tổng", amount: 25000000, status: "pending", date: "2023-10-25" },
-            { id: 2, type: "Marketing", desc: "Chạy Ads Facebook", amount: 5000000, status: "approved", date: "2023-10-25" },
+            { id: 2, type: "Marketing", desc: "Chạy Ads FB", amount: 5000000, status: "approved", date: "2023-10-25" },
         ];
 
         // --- UTILS ---
-        const formatCurrency = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+        const formatCurrency = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(amount);
         const COLORS = ['#10b981', '#f59e0b', '#f43f5e', '#6366f1', '#8b5cf6'];
 
         const generateRandomData = (seed) => ({
@@ -118,7 +104,7 @@
             expense: 40000000 + Math.random() * 20000000 * seed,
             bookings: Math.floor(10 + Math.random() * 10 * seed),
             chartData: Array.from({ length: 7 }, (_, i) => ({
-                name: `Ngày ${i + 1}`,
+                name: `D${i + 1}`,
                 value: Math.floor(Math.random() * 100) + 20
             }))
         });
@@ -126,36 +112,24 @@
         // --- COMPONENTS ---
 
         const DateFilter = ({ onChange, value }) => (
-            <div className="bg-slate-800 p-2 rounded-lg flex flex-wrap items-center gap-2 border border-slate-700 shadow-sm mb-4">
-                <div className="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded border border-slate-700">
-                    <Icons.Calendar className="w-4 h-4 text-indigo-400" />
-                    <select 
-                        value={value.year} 
-                        onChange={(e) => onChange({...value, year: Number(e.target.value)})}
-                        className="bg-transparent text-sm text-white focus:outline-none cursor-pointer"
-                    >
-                        <option value={2023}>2023</option>
-                        <option value={2024}>2024</option>
-                    </select>
-                </div>
-                <div className="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded border border-slate-700">
-                    <span className="text-xs text-slate-400">Tháng</span>
+            <div className="flex overflow-x-auto pb-2 gap-2 w-full md:w-auto scrollbar-hide">
+                <div className="flex bg-slate-800 rounded-lg p-1 shrink-0">
                     <select 
                         value={value.month} 
                         onChange={(e) => onChange({...value, month: Number(e.target.value)})}
-                        className="bg-transparent text-sm text-white focus:outline-none cursor-pointer"
+                        className="bg-transparent text-sm text-white focus:outline-none p-1"
                     >
-                        {Array.from({length: 12}, (_, i) => i + 1).map(m => <option key={m} value={m}>{m}</option>)}
+                        {Array.from({length: 12}, (_, i) => i + 1).map(m => <option key={m} value={m}>Tháng {m}</option>)}
                     </select>
                 </div>
-                <div className="flex bg-slate-900 rounded border border-slate-700 p-1">
+                <div className="flex bg-slate-800 rounded-lg p-1 shrink-0">
                     {['today', 'week', 'month'].map(p => (
                         <button
                             key={p}
                             onClick={() => onChange({...value, period: p})}
-                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${value.period === p ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${value.period === p ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}
                         >
-                            {p === 'today' ? 'Hôm nay' : p === 'week' ? 'Tuần này' : 'Tháng này'}
+                            {p === 'today' ? 'Hôm nay' : p === 'week' ? 'Tuần' : 'Tháng'}
                         </button>
                     ))}
                 </div>
@@ -170,33 +144,32 @@
                     default: return "bg-slate-800 border-slate-700 text-slate-100";
                 }
             };
-            
             const gradientId = "color" + title.replace(/\s+/g, '');
 
             return (
-                <div onClick={onClick} className={`p-5 rounded-2xl border ${getColors()} flex flex-col justify-between shadow-xl cursor-pointer hover:scale-[1.01] transition-all h-60`}>
+                <div onClick={onClick} className={`p-4 rounded-xl border ${getColors()} flex flex-col justify-between shadow-lg active:scale-95 transition-transform h-48 md:h-60`}>
                     <div>
                         <div className="flex justify-between items-center mb-1">
-                            <h3 className="text-xs lg:text-sm uppercase tracking-wider font-bold opacity-80">{title}</h3>
-                            {type === 'success' ? <Icons.TrendingUp size={18} /> : type === 'danger' ? <Icons.TrendingDown size={18} /> : <div />}
+                            <h3 className="text-xs uppercase tracking-wider font-bold opacity-80">{title}</h3>
+                            {type === 'success' ? <Icons.TrendingUp size={16} /> : type === 'danger' ? <Icons.TrendingDown size={16} /> : <div />}
                         </div>
-                        <div className="text-2xl lg:text-3xl font-black mt-1 tracking-tight truncate text-ellipsis overflow-hidden whitespace-nowrap" title={value}>
-                            {value}
-                        </div>
-                        {subtext && <div className="text-xs mt-1 opacity-70 font-medium">{subtext}</div>}
+                        <div className="text-xl md:text-3xl font-black mt-1 tracking-tight truncate" title={value}>{value}</div>
+                        {subtext && <div className="text-[10px] md:text-xs mt-1 opacity-70 font-medium">{subtext}</div>}
                     </div>
-                    <div className="h-24 w-full mt-2 -mx-2">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={chartData}>
-                                <defs>
-                                    <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor={chartColor} stopOpacity={0.4}/>
-                                        <stop offset="95%" stopColor={chartColor} stopOpacity={0}/>
-                                    </linearGradient>
-                                </defs>
-                                <Area type="monotone" dataKey="value" stroke={chartColor} strokeWidth={2} fillOpacity={1} fill={`url(#${gradientId})`} />
-                            </AreaChart>
-                        </ResponsiveContainer>
+                    <div className="h-16 md:h-24 w-full mt-2 -mx-2">
+                        {window.Recharts && (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={chartData}>
+                                    <defs>
+                                        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor={chartColor} stopOpacity={0.4}/>
+                                            <stop offset="95%" stopColor={chartColor} stopOpacity={0}/>
+                                        </linearGradient>
+                                    </defs>
+                                    <Area type="monotone" dataKey="value" stroke={chartColor} strokeWidth={2} fillOpacity={1} fill={`url(#${gradientId})`} />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        )}
                     </div>
                 </div>
             );
@@ -211,47 +184,48 @@
             if (!isOpen) return null;
 
             return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-600 w-full max-w-md shadow-2xl">
-                        <h3 className="text-xl font-bold text-white mb-4 flex justify-between items-center">
-                            Giao Nhiệm Vụ Mới
-                            <button onClick={onClose}><Icons.X size={20} className="text-slate-400" /></button>
-                        </h3>
-                        <div className="space-y-4">
+                <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center bg-black/90 backdrop-blur-sm md:p-4">
+                    <div className="bg-slate-900 w-full h-full md:h-auto md:max-w-md md:rounded-2xl flex flex-col animate-fade-in">
+                        <div className="p-4 border-b border-slate-800 flex justify-between items-center">
+                            <h3 className="text-lg font-bold text-white">Giao Việc Mới</h3>
+                            <button onClick={onClose} className="p-2 bg-slate-800 rounded-full"><Icons.X size={20} className="text-slate-400" /></button>
+                        </div>
+                        <div className="p-4 space-y-4 flex-1 overflow-y-auto">
                             <div>
-                                <label className="text-xs text-slate-400 mb-1 block">Tên công việc</label>
-                                <input className="w-full bg-slate-900 border border-slate-700 rounded p-3 text-white" placeholder="Ví dụ: Gọi lại khách bàn 5" value={title} onChange={e => setTitle(e.target.value)} />
+                                <label className="text-xs text-slate-400 mb-1 block uppercase">Công việc</label>
+                                <input className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:border-indigo-500 outline-none" placeholder="Nhập tên công việc..." value={title} onChange={e => setTitle(e.target.value)} />
                             </div>
                             <div>
-                                <label className="text-xs text-slate-400 mb-1 block">Người thực hiện</label>
-                                <select className="w-full bg-slate-900 border border-slate-700 rounded p-3 text-white" value={assignee} onChange={e => setAssignee(e.target.value)}>
+                                <label className="text-xs text-slate-400 mb-1 block uppercase">Người làm</label>
+                                <select className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white outline-none" value={assignee} onChange={e => setAssignee(e.target.value)}>
                                     <option value="">-- Chọn nhân sự --</option>
                                     {staffList.map((s) => <option key={s.id} value={s.name}>{s.name} ({s.role})</option>)}
                                 </select>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="text-xs text-slate-400 mb-1 block">Deadline</label>
-                                    <input type="time" className="bg-slate-900 border border-slate-700 rounded p-3 text-white" value={deadline} onChange={e => setDeadline(e.target.value)} />
+                                    <label className="text-xs text-slate-400 mb-1 block uppercase">Deadline</label>
+                                    <input type="time" className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white outline-none" value={deadline} onChange={e => setDeadline(e.target.value)} />
                                 </div>
                                 <div>
-                                    <label className="text-xs text-slate-400 mb-1 block">Ưu tiên</label>
-                                    <select className="bg-slate-900 border border-slate-700 rounded p-3 text-white w-full" value={priority} onChange={e => setPriority(e.target.value)}>
-                                        <option value="high">Cao</option>
-                                        <option value="medium">Bình thường</option>
-                                        <option value="low">Thấp</option>
+                                    <label className="text-xs text-slate-400 mb-1 block uppercase">Độ ưu tiên</label>
+                                    <select className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white outline-none" value={priority} onChange={e => setPriority(e.target.value)}>
+                                        <option value="high">Cao 🔴</option>
+                                        <option value="medium">Vừa 🟡</option>
+                                        <option value="low">Thấp 🟢</option>
                                     </select>
                                 </div>
                             </div>
+                        </div>
+                        <div className="p-4 border-t border-slate-800 bg-slate-900 pb-8 md:pb-4">
                             <button 
                                 onClick={() => { 
                                     if(!title || !assignee) return alert("Vui lòng nhập đủ thông tin");
                                     onSave({title, assignee, deadline, priority}); 
                                     onClose(); 
                                     setTitle(""); 
-                                    setDeadline("");
                                 }} 
-                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg mt-4 shadow-lg shadow-indigo-900/50"
+                                className="w-full bg-indigo-600 active:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg"
                             >
                                 Giao Việc Ngay
                             </button>
@@ -269,40 +243,41 @@
             if(!isOpen) return null;
 
             return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-600 w-full max-w-md shadow-2xl">
-                        <h3 className="text-xl font-bold text-white mb-4 flex justify-between items-center">
-                            Tạo Phiếu Chi Mới
-                            <button onClick={onClose}><Icons.X size={20} className="text-slate-400" /></button>
-                        </h3>
-                        <div className="space-y-4">
+                <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center bg-black/90 backdrop-blur-sm md:p-4">
+                    <div className="bg-slate-900 w-full h-full md:h-auto md:max-w-md md:rounded-2xl flex flex-col animate-fade-in">
+                        <div className="p-4 border-b border-slate-800 flex justify-between items-center">
+                            <h3 className="text-lg font-bold text-white">Tạo Phiếu Chi</h3>
+                            <button onClick={onClose} className="p-2 bg-slate-800 rounded-full"><Icons.X size={20} className="text-slate-400" /></button>
+                        </div>
+                        <div className="p-4 space-y-4 flex-1 overflow-y-auto">
                             <div>
-                                <label className="text-xs text-slate-400 mb-1 block">Nội dung chi</label>
-                                <input className="w-full bg-slate-900 border border-slate-700 rounded p-3 text-white" placeholder="Ví dụ: Nhập rượu Chivas" value={desc} onChange={e => setDesc(e.target.value)} />
+                                <label className="text-xs text-slate-400 mb-1 block uppercase">Nội dung</label>
+                                <input className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white outline-none" placeholder="Ví dụ: Mua đá, nhập rượu..." value={desc} onChange={e => setDesc(e.target.value)} />
                             </div>
                             <div>
-                                <label className="text-xs text-slate-400 mb-1 block">Số tiền (VNĐ)</label>
-                                <input className="w-full bg-slate-900 border border-slate-700 rounded p-3 text-white" type="number" placeholder="0" value={amount} onChange={e => setAmount(e.target.value)} />
+                                <label className="text-xs text-slate-400 mb-1 block uppercase">Số tiền</label>
+                                <input className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white outline-none font-mono text-lg" type="number" placeholder="0" value={amount} onChange={e => setAmount(e.target.value)} />
                             </div>
                             <div>
-                                <label className="text-xs text-slate-400 mb-1 block">Loại chi phí</label>
-                                <select className="w-full bg-slate-900 border border-slate-700 rounded p-3 text-white" value={type} onChange={e => setType(e.target.value)}>
+                                <label className="text-xs text-slate-400 mb-1 block uppercase">Loại chi phí</label>
+                                <select className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white outline-none" value={type} onChange={e => setType(e.target.value)}>
                                     <option value="Nhập hàng">Nhập hàng / Kho</option>
-                                    <option value="Marketing">Marketing / QC</option>
-                                    <option value="Vận hành">Vận hành / Điện nước</option>
+                                    <option value="Marketing">Marketing</option>
+                                    <option value="Vận hành">Vận hành</option>
                                     <option value="Nhân sự">Lương / Thưởng</option>
                                     <option value="Khác">Khác</option>
                                 </select>
                             </div>
+                        </div>
+                        <div className="p-4 border-t border-slate-800 bg-slate-900 pb-8 md:pb-4">
                             <button 
                                 onClick={() => { 
                                     if(!desc || !amount) return alert("Vui lòng nhập đủ thông tin");
                                     onSave({desc, amount: Number(amount), type}); 
                                     onClose(); 
-                                    setDesc(""); 
-                                    setAmount(""); 
+                                    setDesc(""); setAmount(""); 
                                 }}
-                                className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-lg mt-2 shadow-lg shadow-rose-900/50"
+                                className="w-full bg-rose-600 active:bg-rose-700 text-white font-bold py-4 rounded-xl shadow-lg"
                             >
                                 Lưu Phiếu Chi
                             </button>
@@ -333,12 +308,20 @@
             const total = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
 
             return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
-                    <div className="bg-slate-900 w-full max-w-5xl h-[85vh] rounded-2xl border border-slate-700 flex overflow-hidden shadow-2xl">
-                        <div className="w-2/3 flex flex-col border-r border-slate-800">
-                            <div className="p-4 bg-slate-950 border-b border-slate-800 grid grid-cols-3 gap-3">
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950">
+                    <div className="w-full h-full flex flex-col md:flex-row bg-slate-900">
+                        {/* Header Mobile */}
+                        <div className="md:hidden p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900">
+                            <button onClick={onClose} className="p-2 bg-slate-800 rounded-full"><Icons.ChevronLeft size={24} /></button>
+                            <span className="font-bold text-lg">Tạo Đơn Mới</span>
+                            <div className="w-10"></div>
+                        </div>
+
+                        {/* Left: Info & Menu */}
+                        <div className="flex-1 flex flex-col border-r border-slate-800 overflow-hidden">
+                            <div className="p-4 bg-slate-950 border-b border-slate-800 space-y-3">
                                 <select 
-                                    className="bg-slate-800 border border-slate-600 rounded p-2 text-white font-bold"
+                                    className="w-full bg-slate-800 border border-slate-600 rounded-lg p-3 text-white font-bold outline-none"
                                     value={selectedTableId}
                                     onChange={(e) => setSelectedTableId(e.target.value)}
                                 >
@@ -350,23 +333,31 @@
                                         <option key={t.id} value={t.id} disabled>{t.name} (Có khách)</option>
                                     ))}
                                 </select>
-                                <input type="text" placeholder="Tên khách" className="bg-slate-800 border border-slate-600 rounded p-2 text-white" value={customerName} onChange={e => setCustomerName(e.target.value)} />
-                                <input type="text" placeholder="SĐT" className="bg-slate-800 border border-slate-600 rounded p-2 text-white" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <input type="text" placeholder="Tên khách" className="bg-slate-800 border border-slate-600 rounded-lg p-3 text-white outline-none" value={customerName} onChange={e => setCustomerName(e.target.value)} />
+                                    <input type="tel" placeholder="SĐT" className="bg-slate-800 border border-slate-600 rounded-lg p-3 text-white outline-none" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} />
+                                </div>
                             </div>
-                            <div className="flex-1 overflow-y-auto p-4 bg-slate-900">
-                                <div className="grid grid-cols-3 gap-3">
+                            <div className="flex-1 overflow-y-auto p-2 md:p-4 bg-slate-900">
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
                                     {menuItems.map((item) => (
-                                        <div key={item.id} onClick={() => addToCart(item)} className="bg-slate-800 p-3 rounded-lg border border-slate-700 hover:border-indigo-500 cursor-pointer h-24 flex flex-col justify-between">
+                                        <div key={item.id} onClick={() => addToCart(item)} className="bg-slate-800 p-3 rounded-lg border border-slate-700 active:border-indigo-500 active:bg-slate-700 flex flex-col justify-between h-24">
                                             <div><div className="font-bold text-slate-200 text-sm truncate">{item.name}</div><div className="text-xs text-slate-400">{item.category}</div></div>
-                                            <div className="text-emerald-400 font-bold text-right">{formatCurrency(item.price)}</div>
+                                            <div className="text-emerald-400 font-bold text-right text-sm">{formatCurrency(item.price)}</div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         </div>
-                        <div className="w-1/3 flex flex-col bg-slate-950">
-                            <div className="p-4 border-b border-slate-800 flex justify-between"><h3 className="font-bold text-white">Giỏ hàng</h3><span className="text-slate-400 text-sm">{cart.length} món</span></div>
-                            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                        
+                        {/* Right: Cart (Bottom Sheet on Mobile) */}
+                        <div className="h-1/3 md:h-auto md:w-1/3 flex flex-col bg-slate-950 border-t md:border-t-0 md:border-l border-slate-800 shadow-2xl z-10">
+                            <div className="p-3 border-b border-slate-800 flex justify-between items-center bg-slate-900">
+                                <h3 className="font-bold text-white flex items-center gap-2"><Icons.ShoppingBag size={18} /> Giỏ hàng</h3>
+                                <span className="text-slate-400 text-xs">{cart.length} món</span>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                                {cart.length === 0 && <div className="text-center text-slate-500 text-sm mt-4">Chưa chọn món</div>}
                                 {cart.map((item, idx) => (
                                     <div key={idx} className="flex justify-between text-sm border-b border-slate-800 pb-2">
                                         <div><div className="text-slate-200">{item.name}</div><div className="text-xs text-slate-500">{formatCurrency(item.price)} x {item.qty}</div></div>
@@ -374,15 +365,15 @@
                                     </div>
                                 ))}
                             </div>
-                            <div className="p-6 bg-slate-900 border-t border-slate-800">
-                                <div className="flex justify-between text-xl font-black text-white mb-6"><span>TỔNG</span><span className="text-emerald-400">{formatCurrency(total)}</span></div>
+                            <div className="p-4 bg-slate-900 border-t border-slate-800 pb-8 md:pb-4">
+                                <div className="flex justify-between text-lg font-black text-white mb-4"><span>TỔNG</span><span className="text-emerald-400">{formatCurrency(total)}</span></div>
                                 <div className="grid grid-cols-2 gap-3">
-                                    <button onClick={onClose} className="bg-slate-700 text-white py-3 rounded-lg font-bold">Hủy</button>
+                                    <button onClick={onClose} className="bg-slate-800 text-white py-3 rounded-xl font-bold">Hủy</button>
                                     <button onClick={() => { 
                                         if(!selectedTableId) return alert("Chưa chọn bàn!");
                                         onSave({ tableId: Number(selectedTableId), total, customerName, customerPhone }); 
                                         onClose(); 
-                                    }} className="bg-indigo-600 text-white py-3 rounded-lg font-bold shadow-lg">LÊN ĐƠN</button>
+                                    }} className="bg-indigo-600 active:bg-indigo-700 text-white py-3 rounded-xl font-bold shadow-lg">LÊN ĐƠN</button>
                                 </div>
                             </div>
                         </div>
@@ -391,57 +382,30 @@
             );
         };
 
-        // --- LOGIN SCREEN (NO PASSWORD) ---
+        // --- LOGIN SCREEN ---
         const LoginScreen = ({ onLogin }) => (
-            <div className="flex items-center justify-center h-screen bg-slate-950">
-                <div className="w-full max-w-2xl p-8 animate-fade-in">
-                    <div className="text-center mb-12">
-                        <h1 className="text-5xl font-black bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent uppercase tracking-tighter mb-4">
-                            Titan Dashboard
+            <div className="flex flex-col items-center justify-center h-screen bg-slate-950 p-6">
+                <div className="w-full max-w-sm animate-fade-in text-center">
+                    <div className="mb-10">
+                        <h1 className="text-4xl font-black bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent uppercase tracking-tighter mb-2">
+                            Titan Club
                         </h1>
-                        <p className="text-slate-400">Hệ thống quản trị Club - Vui lòng chọn tài khoản</p>
+                        <p className="text-slate-500 text-sm">Hệ thống quản trị thời gian thực</p>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* BOSS */}
-                        <button 
-                            onClick={() => onLogin('owner')}
-                            className="bg-slate-900 border border-slate-800 hover:border-amber-500 hover:bg-slate-800 p-6 rounded-2xl transition-all group flex flex-col items-center"
-                        >
-                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center text-white font-bold text-2xl mb-4 shadow-lg group-hover:scale-110 transition-transform">
-                                LM
-                            </div>
-                            <h3 className="font-bold text-white text-lg">Lê Minh</h3>
-                            <span className="text-xs text-amber-500 font-bold uppercase mt-1">BOSS / ADMIN</span>
+                    <div className="space-y-4">
+                        <button onClick={() => onLogin('owner')} className="w-full bg-slate-900 border border-slate-800 active:border-amber-500 p-4 rounded-2xl flex items-center gap-4 group transition-all">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center text-white font-bold shadow-lg">LM</div>
+                            <div className="text-left"><h3 className="font-bold text-white">Lê Minh</h3><span className="text-xs text-amber-500 font-bold uppercase">BOSS</span></div>
                         </button>
-
-                        {/* MANAGER */}
-                        <button 
-                            onClick={() => onLogin('manager')}
-                            className="bg-slate-900 border border-slate-800 hover:border-blue-500 hover:bg-slate-800 p-6 rounded-2xl transition-all group flex flex-col items-center"
-                        >
-                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white font-bold text-2xl mb-4 shadow-lg group-hover:scale-110 transition-transform">
-                                PH
-                            </div>
-                            <h3 className="font-bold text-white text-lg">Phạm Hùng</h3>
-                            <span className="text-xs text-blue-500 font-bold uppercase mt-1">MANAGER</span>
+                        <button onClick={() => onLogin('manager')} className="w-full bg-slate-900 border border-slate-800 active:border-blue-500 p-4 rounded-2xl flex items-center gap-4 group transition-all">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg">PH</div>
+                            <div className="text-left"><h3 className="font-bold text-white">Phạm Hùng</h3><span className="text-xs text-blue-500 font-bold uppercase">MANAGER</span></div>
                         </button>
-
-                        {/* STAFF */}
-                        <button 
-                            onClick={() => onLogin('staff')}
-                            className="bg-slate-900 border border-slate-800 hover:border-emerald-500 hover:bg-slate-800 p-6 rounded-2xl transition-all group flex flex-col items-center"
-                        >
-                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-white font-bold text-2xl mb-4 shadow-lg group-hover:scale-110 transition-transform">
-                                TT
-                            </div>
-                            <h3 className="font-bold text-white text-lg">Tuấn Tiger</h3>
-                            <span className="text-xs text-emerald-500 font-bold uppercase mt-1">SALES STAFF</span>
+                        <button onClick={() => onLogin('staff')} className="w-full bg-slate-900 border border-slate-800 active:border-emerald-500 p-4 rounded-2xl flex items-center gap-4 group transition-all">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-white font-bold shadow-lg">TT</div>
+                            <div className="text-left"><h3 className="font-bold text-white">Tuấn Tiger</h3><span className="text-xs text-emerald-500 font-bold uppercase">STAFF</span></div>
                         </button>
-                    </div>
-                    
-                    <div className="mt-12 text-center text-xs text-slate-600">
-                        * Demo Version: Không yêu cầu mật khẩu đăng nhập
                     </div>
                 </div>
             </div>
@@ -451,10 +415,9 @@
         function TitanApp() {
             const [currentView, setCurrentView] = useState("dashboard");
             const [role, setRole] = useState("owner"); 
-            const [isSidebarOpen, setSidebarOpen] = useState(true);
-            const [isLoggedIn, setIsLoggedIn] = useState(false); // State quản lý đăng nhập
+            const [isSidebarOpen, setSidebarOpen] = useState(false); // Mobile default closed
+            const [isLoggedIn, setIsLoggedIn] = useState(false);
             
-            // Data State
             const [dateFilter, setDateFilter] = useState({ year: 2023, month: 10, period: 'today' });
             const [simulatedData, setSimulatedData] = useState(generateRandomData(1));
             const [staffData, setStaffData] = useState(INITIAL_STAFF);
@@ -462,7 +425,7 @@
             const [tables, setTables] = useState(TABLES_MOCK);
             const [expenseData, setExpenseData] = useState(INITIAL_EXPENSES);
 
-            // Modal State
+            // Modals
             const [isPOSOpen, setIsPOSOpen] = useState(false);
             const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
             const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
@@ -474,15 +437,10 @@
             }, [dateFilter]);
 
             // Handlers
-            const handleLogin = (selectedRole) => {
-                setRole(selectedRole);
-                setIsLoggedIn(true);
-            };
-
-            const handleLogout = () => {
-                setIsLoggedIn(false);
-                setCurrentView("dashboard");
-            };
+            const handleLogin = (r) => { setRole(r); setIsLoggedIn(true); };
+            const handleLogout = () => { setIsLoggedIn(false); setCurrentView("dashboard"); };
+            const toggleSidebar = () => setSidebarOpen(!isSidebarOpen);
+            const closeSidebar = () => setSidebarOpen(false);
 
             const handleCreateOrder = (orderInfo) => {
                 setTables(tables.map(t => t.id === orderInfo.tableId ? { 
@@ -496,12 +454,7 @@
             };
 
             const handleAddExpense = (newExpense) => {
-                const expense = {
-                    id: Date.now(),
-                    ...newExpense,
-                    status: role === 'owner' ? 'approved' : 'pending',
-                    date: new Date().toISOString().split('T')[0]
-                };
+                const expense = { id: Date.now(), ...newExpense, status: role === 'owner' ? 'approved' : 'pending', date: new Date().toISOString().split('T')[0] };
                 setExpenseData([expense, ...expenseData]);
             };
 
@@ -518,131 +471,73 @@
             ];
 
             const renderDashboard = () => (
-                <div className="space-y-6 animate-fade-in">
+                <div className="space-y-4 animate-fade-in">
                     <div className="flex justify-between items-center">
-                        <h2 className="text-2xl font-black text-white uppercase">Tổng Quan</h2>
+                        <h2 className="text-xl font-black text-white uppercase hidden md:block">Tổng Quan</h2>
                         <DateFilter value={dateFilter} onChange={setDateFilter} />
                     </div>
                     
-                    {/* 3 Cột Trên */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <StatCard 
-                            title="Doanh Thu" 
-                            value={formatCurrency(simulatedData.revenue)} 
-                            type="success" 
-                            chartColor="#10b981"
-                            chartData={simulatedData.chartData}
-                            onClick={() => setCurrentView('cashin')}
-                        />
-                        <StatCard 
-                            title="Chi Phí" 
-                            value={formatCurrency(simulatedData.expense)} 
-                            type="danger" 
-                            chartColor="#f43f5e"
-                            chartData={simulatedData.chartData.map((d) => ({...d, value: d.value * 0.6}))}
-                            onClick={() => setCurrentView('cashout')}
-                        />
-                        <StatCard 
-                            title="Lợi Nhuận Ròng" 
-                            value={formatCurrency(simulatedData.revenue - simulatedData.expense)} 
-                            type="success" 
-                            chartColor="#f59e0b"
-                            chartData={simulatedData.chartData.map((d) => ({...d, value: d.value * 0.4}))}
-                        />
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <StatCard title="Doanh Thu" value={formatCurrency(simulatedData.revenue)} type="success" chartColor="#10b981" chartData={simulatedData.chartData} onClick={() => setCurrentView('cashin')} />
+                        <StatCard title="Chi Phí" value={formatCurrency(simulatedData.expense)} type="danger" chartColor="#f43f5e" chartData={simulatedData.chartData.map(d => ({...d, value: d.value * 0.6}))} onClick={() => setCurrentView('cashout')} />
+                        <StatCard title="Lợi Nhuận" value={formatCurrency(simulatedData.revenue - simulatedData.expense)} type="success" chartColor="#f59e0b" chartData={simulatedData.chartData.map(d => ({...d, value: d.value * 0.4}))} />
                     </div>
 
-                    {/* 2 Cột Dưới */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <StatCard 
-                            title="Booking Hiệu Quả" 
-                            value={`${simulatedData.bookings} Bàn`} 
-                            subtext="Lấp đầy: 65%"
-                            type="neutral" 
-                            chartColor="#6366f1"
-                            chartData={simulatedData.chartData}
-                            onClick={() => setCurrentView('cashin')}
-                        />
-                        <StatCard 
-                            title="Hiệu Suất Nhân Sự" 
-                            value="94%" 
-                            subtext="Top Star: Lan VIP"
-                            type="neutral" 
-                            chartColor="#8b5cf6"
-                            chartData={simulatedData.chartData}
-                            onClick={() => setCurrentView('staff')}
-                        />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-20">
+                        <StatCard title="Booking" value={`${simulatedData.bookings} Bàn`} subtext="Lấp đầy: 65%" type="neutral" chartColor="#6366f1" chartData={simulatedData.chartData} onClick={() => setCurrentView('cashin')} />
+                        <StatCard title="Nhân Sự" value="94%" subtext="Top: Lan VIP" type="neutral" chartColor="#8b5cf6" chartData={simulatedData.chartData} onClick={() => setCurrentView('staff')} />
                     </div>
                 </div>
             );
 
             const renderCashOut = () => (
-                <div className="space-y-6 animate-fade-in">
-                  <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="space-y-4 animate-fade-in pb-20">
+                  <div className="flex justify-between items-center">
                       <DateFilter value={dateFilter} onChange={setDateFilter} />
-                      <button 
-                        onClick={() => setIsExpenseModalOpen(true)}
-                        className="bg-rose-600 hover:bg-rose-700 text-white px-6 py-2 rounded-lg flex items-center font-bold shadow-lg shadow-rose-900/50"
-                      >
-                        <Icons.Plus className="mr-2" size={18} /> Tạo Phiếu Chi
-                      </button>
+                      <button onClick={() => setIsExpenseModalOpen(true)} className="bg-rose-600 text-white p-2 rounded-lg shadow-lg"><Icons.Plus size={20} /></button>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                      {/* Chart Breakdown */}
-                      <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
-                        <h3 className="text-lg font-bold text-white mb-4">Cơ Cấu Chi Phí</h3>
-                        <div className="h-64">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <PieChart>
-                                  <Pie data={[
-                                    { name: 'Nhập hàng', value: 50 }, { name: 'Nhân sự', value: 30 }, { name: 'Mkt', value: 15 }, { name: 'Khác', value: 5 }
-                                  ]} dataKey="value" cx="50%" cy="50%" innerRadius={60} outerRadius={80}>
-                                    {COLORS.map((color, index) => <Cell key={`cell-${index}`} fill={color} />)}
-                                  </Pie>
-                                  <Tooltip />
-                              </PieChart>
-                            </ResponsiveContainer>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 text-sm mt-4">
-                            <div className="flex items-center"><div className="w-3 h-3 bg-emerald-500 rounded-full mr-2"></div> Nhập hàng (50%)</div>
-                            <div className="flex items-center"><div className="w-3 h-3 bg-amber-500 rounded-full mr-2"></div> Nhân sự (30%)</div>
-                            <div className="flex items-center"><div className="w-3 h-3 bg-rose-500 rounded-full mr-2"></div> Marketing (15%)</div>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                      <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                        <h3 className="text-md font-bold text-white mb-2">Cơ Cấu Chi</h3>
+                        <div className="h-48 md:h-64">
+                            {window.Recharts && (
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <PieChart>
+                                      <Pie data={[{ name: 'Nhập hàng', value: 50 }, { name: 'Nhân sự', value: 30 }, { name: 'Mkt', value: 15 }, { name: 'Khác', value: 5 }]} dataKey="value" cx="50%" cy="50%" innerRadius={60} outerRadius={80}>
+                                        {COLORS.map((color, index) => <Cell key={`cell-${index}`} fill={color} />)}
+                                      </Pie>
+                                      <Tooltip />
+                                  </PieChart>
+                                </ResponsiveContainer>
+                            )}
                         </div>
                       </div>
 
-                      {/* Expense List */}
-                      <div className="lg:col-span-2 bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
-                        <div className="p-4 border-b border-slate-700 bg-slate-950/50 flex justify-between items-center">
-                            <h3 className="font-bold text-white">Danh Sách Phiếu Chi</h3>
-                            <span className="text-slate-400 text-sm">Tổng: <span className="text-rose-400 font-bold">{formatCurrency(expenseData.reduce((a,b) => a + b.amount, 0))}</span></span>
+                      <div className="lg:col-span-2 bg-slate-800 rounded-xl border border-slate-700 overflow-hidden flex flex-col">
+                        <div className="p-3 border-b border-slate-700 bg-slate-950/50 flex justify-between items-center">
+                            <h3 className="font-bold text-white text-sm">Danh Sách Chi</h3>
+                            <span className="text-rose-400 font-bold text-sm">{formatCurrency(expenseData.reduce((a,b) => a + b.amount, 0))}</span>
                         </div>
                         <div className="overflow-x-auto">
-                            <table className="w-full text-sm text-left text-slate-300">
-                              <thead className="bg-slate-900 text-slate-400 uppercase text-xs">
-                                  <tr>
-                                    <th className="px-6 py-4">Thời gian</th>
-                                    <th className="px-6 py-4">Hạng mục</th>
-                                    <th className="px-6 py-4">Nội dung</th>
-                                    <th className="px-6 py-4 text-right">Số tiền</th>
-                                    <th className="px-6 py-4 text-center">Trạng thái</th>
-                                  </tr>
-                              </thead>
-                              <tbody>
-                                  {expenseData.map((exp) => (
-                                    <tr key={exp.id} className="border-b border-slate-700 hover:bg-slate-700/30">
-                                        <td className="px-6 py-4">{exp.date}</td>
-                                        <td className="px-6 py-4"><span className="px-2 py-1 bg-slate-700 rounded text-xs border border-slate-600">{exp.type}</span></td>
-                                        <td className="px-6 py-4 font-bold text-white">{exp.desc}</td>
-                                        <td className="px-6 py-4 text-right font-bold text-rose-400">{formatCurrency(exp.amount)}</td>
-                                        <td className="px-6 py-4 text-center">
-                                          <span className={`px-2 py-1 rounded text-xs font-bold ${exp.status === 'approved' ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-900' : 'bg-amber-900/30 text-amber-400 border border-amber-900'}`}>
-                                              {exp.status === 'approved' ? 'Đã duyệt' : 'Chờ duyệt'}
-                                          </span>
-                                        </td>
-                                    </tr>
-                                  ))}
-                              </tbody>
-                            </table>
+                            <div className="min-w-[600px] md:min-w-0">
+                                <table className="w-full text-xs md:text-sm text-left text-slate-300">
+                                  <thead className="bg-slate-900 text-slate-400 uppercase">
+                                      <tr><th className="px-4 py-3">Ngày</th><th className="px-4 py-3">Loại</th><th className="px-4 py-3">Nội dung</th><th className="px-4 py-3 text-right">Tiền</th><th className="px-4 py-3 text-center">TT</th></tr>
+                                  </thead>
+                                  <tbody>
+                                      {expenseData.map((exp) => (
+                                        <tr key={exp.id} className="border-b border-slate-700">
+                                            <td className="px-4 py-3">{exp.date}</td>
+                                            <td className="px-4 py-3"><span className="px-2 py-1 bg-slate-700 rounded border border-slate-600">{exp.type}</span></td>
+                                            <td className="px-4 py-3 font-bold text-white truncate max-w-[100px]">{exp.desc}</td>
+                                            <td className="px-4 py-3 text-right font-bold text-rose-400">{formatCurrency(exp.amount)}</td>
+                                            <td className="px-4 py-3 text-center"><span className={`px-2 py-1 rounded ${exp.status === 'approved' ? 'bg-emerald-900/30 text-emerald-400' : 'bg-amber-900/30 text-amber-400'}`}>{exp.status === 'approved' ? 'OK' : 'Chờ'}</span></td>
+                                        </tr>
+                                      ))}
+                                  </tbody>
+                                </table>
+                            </div>
                         </div>
                       </div>
                   </div>
@@ -650,46 +545,36 @@
             );
 
             const renderTasks = () => (
-                <div className="h-full flex flex-col animate-fade-in">
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-2xl font-black text-white uppercase">Nhiệm Vụ & KPI</h2>
+                <div className="h-full flex flex-col animate-fade-in pb-20">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-lg font-black text-white uppercase">Nhiệm Vụ</h2>
                         {(role === 'owner' || role === 'manager') && (
-                            <button 
-                                onClick={() => setIsTaskModalOpen(true)}
-                                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center font-bold shadow-lg"
-                            >
-                                <Icons.Plus size={18} className="mr-2" /> Giao Việc Mới
-                            </button>
+                            <button onClick={() => setIsTaskModalOpen(true)} className="bg-indigo-600 text-white px-3 py-2 rounded-lg flex items-center font-bold text-sm"><Icons.Plus size={16} className="mr-1" /> Giao Việc</button>
                         )}
                     </div>
 
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 overflow-hidden">
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
                         {['todo', 'doing', 'done'].map(status => (
-                            <div key={status} className="bg-slate-800/50 rounded-xl border border-slate-700 flex flex-col h-full">
-                                <div className={`p-4 border-b border-slate-700 font-bold uppercase tracking-wider flex justify-between ${status === 'todo' ? 'text-slate-300' : status === 'doing' ? 'text-amber-400' : 'text-emerald-400'}`}>
-                                    <span>{status === 'todo' ? 'Mới Giao' : status === 'doing' ? 'Đang Làm' : 'Hoàn Thành'}</span>
-                                    <span className="bg-slate-900 px-2 rounded text-xs py-0.5">{taskData.filter(t => t.status === status).length}</span>
+                            <div key={status} className="bg-slate-800/50 rounded-xl border border-slate-700 flex flex-col">
+                                <div className={`p-3 border-b border-slate-700 font-bold uppercase text-xs flex justify-between ${status === 'todo' ? 'text-slate-300' : status === 'doing' ? 'text-amber-400' : 'text-emerald-400'}`}>
+                                    <span>{status === 'todo' ? 'Mới' : status === 'doing' ? 'Đang Làm' : 'Xong'}</span>
+                                    <span className="bg-slate-900 px-2 rounded">{taskData.filter(t => t.status === status).length}</span>
                                 </div>
-                                <div className="p-3 space-y-3 overflow-y-auto flex-1">
+                                <div className="p-3 space-y-3">
                                     {taskData.filter(t => t.status === status).map(task => (
-                                        <div key={task.id} className="bg-slate-800 p-4 rounded-lg border border-slate-600 shadow relative">
+                                        <div key={task.id} className="bg-slate-800 p-3 rounded-lg border border-slate-600 shadow">
                                             <div className="flex justify-between mb-2">
                                                 <span className={`text-[10px] px-2 py-0.5 rounded border uppercase font-bold ${task.priority === 'high' ? 'border-rose-500 text-rose-400' : 'border-blue-500 text-blue-400'}`}>{task.priority}</span>
-                                                <div className="text-xs text-slate-500">DL: {task.deadline}</div>
+                                                <div className="text-[10px] text-slate-500">DL: {task.deadline}</div>
                                             </div>
-                                            <h4 className="font-bold text-white mb-1">{task.title}</h4>
-                                            <div className="text-xs text-slate-400 mb-3">Giao: {task.assigner} → <span className="text-white font-bold">{task.assignee}</span></div>
+                                            <h4 className="font-bold text-white text-sm mb-1">{task.title}</h4>
+                                            <div className="text-xs text-slate-400 mb-3">{task.assignee}</div>
                                             <div className="grid grid-cols-1 gap-2">
-                                                {status === 'todo' && (role === 'staff' || role === 'manager') && (
-                                                    <button onClick={() => handleTaskAction(task.id, 'accept')} className="bg-slate-700 hover:bg-indigo-600 text-white text-xs py-2 rounded font-bold">NHẬN VIỆC</button>
-                                                )}
-                                                {status === 'doing' && (role === 'staff' || role === 'manager') && (
-                                                    <button onClick={() => handleTaskAction(task.id, 'complete')} className="bg-emerald-700 hover:bg-emerald-600 text-white text-xs py-2 rounded font-bold">HOÀN THÀNH</button>
-                                                )}
+                                                {status === 'todo' && (role === 'staff' || role === 'manager') && <button onClick={() => handleTaskAction(task.id, 'accept')} className="bg-slate-700 text-white text-xs py-2 rounded font-bold">NHẬN</button>}
+                                                {status === 'doing' && (role === 'staff' || role === 'manager') && <button onClick={() => handleTaskAction(task.id, 'complete')} className="bg-emerald-700 text-white text-xs py-2 rounded font-bold">XONG</button>}
                                             </div>
                                         </div>
                                     ))}
-                                    {taskData.filter(t => t.status === status).length === 0 && <div className="text-center text-slate-600 italic py-10">Trống</div>}
                                 </div>
                             </div>
                         ))}
@@ -697,55 +582,56 @@
                 </div>
             );
 
-            // LOGIC CHECK LOGIN
-            if (!isLoggedIn) {
-                return <LoginScreen onLogin={handleLogin} />;
-            }
+            if (!isLoggedIn) return <LoginScreen onLogin={handleLogin} />;
 
             return (
                 <div className="flex h-screen bg-slate-900 text-slate-100 font-sans overflow-hidden">
-                    <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} hidden md:flex flex-col bg-slate-950 border-r border-slate-800 transition-all duration-300 z-20`}>
-                        <div className="p-4 flex items-center justify-center h-20 border-b border-slate-800">
-                            {isSidebarOpen ? <h1 className="text-2xl font-black text-indigo-500 uppercase">TITAN <span className="text-white text-sm block">APP</span></h1> : <span className="font-black text-indigo-500 text-2xl">T</span>}
+                    {/* Mobile Sidebar Overlay */}
+                    <div className={`sidebar-overlay fixed inset-0 bg-black/80 z-40 md:hidden ${isSidebarOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`} onClick={closeSidebar}></div>
+
+                    {/* Sidebar */}
+                    <aside className={`sidebar-menu fixed inset-y-0 left-0 z-50 w-64 bg-slate-950 border-r border-slate-800 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 md:w-64 flex flex-col transition-transform duration-300`}>
+                        <div className="p-4 flex items-center justify-center h-16 border-b border-slate-800">
+                            <h1 className="text-2xl font-black text-indigo-500 uppercase tracking-widest">TITAN</h1>
                         </div>
                         <nav className="flex-1 py-6 px-4 space-y-2">
                             {navItems.filter(item => item.roles.includes(role)).map((item) => (
-                                <button key={item.id} onClick={() => setCurrentView(item.id)} className={`w-full flex items-center p-3 rounded-xl font-bold transition-all ${currentView === item.id ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}>
-                                    <item.icon className={`w-5 h-5 ${isSidebarOpen ? 'mr-3' : 'mx-auto'}`} /> {isSidebarOpen && <span>{item.label}</span>}
+                                <button key={item.id} onClick={() => { setCurrentView(item.id); closeSidebar(); }} className={`w-full flex items-center p-3 rounded-xl font-bold transition-all ${currentView === item.id ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50' : 'text-slate-400 hover:text-white'}`}>
+                                    <item.icon className="w-5 h-5 mr-3" /> <span>{item.label}</span>
                                 </button>
                             ))}
                         </nav>
                         <div className="p-4 border-t border-slate-800">
-                            <button 
-                                onClick={handleLogout}
-                                className={`w-full flex items-center justify-center gap-2 text-xs px-3 py-3 rounded-lg font-bold border border-rose-900 text-rose-500 hover:bg-rose-900/20 transition-colors ${!isSidebarOpen && 'justify-center'}`}
-                            >
-                                <Icons.LogOut size={16} />
-                                {isSidebarOpen && "Đăng Xuất"}
-                            </button>
+                            <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 text-xs px-3 py-3 rounded-lg font-bold border border-rose-900 text-rose-500"><Icons.LogOut size={16} /> Đăng Xuất</button>
                         </div>
                     </aside>
 
                     <div className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-900 relative">
-                        <header className="h-16 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-6">
-                            <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="md:hidden text-slate-300"><Icons.Menu /></button>
-                            <div className="flex-1"></div>
-                            <div className="flex items-center space-x-4">
-                                <div className="text-right hidden sm:block"><div className="text-sm font-bold text-white">{role === 'owner' ? 'Lê Minh' : role === 'manager' ? 'Phạm Hùng' : 'Tuấn Tiger'}</div><div className="text-xs text-indigo-400 font-bold uppercase">{role}</div></div>
-                                <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold border-2 border-slate-700">{role === 'owner' ? 'LM' : role === 'manager' ? 'PH' : 'TT'}</div>
+                        {/* Header */}
+                        <header className="h-16 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-4 z-30">
+                            <button onClick={toggleSidebar} className="md:hidden text-slate-300 p-2"><Icons.Menu /></button>
+                            <div className="font-bold text-white md:hidden uppercase tracking-wider">{currentView === 'cashin' ? 'Tiền Vào' : currentView === 'cashout' ? 'Tiền Ra' : currentView}</div>
+                            <div className="flex-1 hidden md:block"></div>
+                            <div className="flex items-center space-x-3">
+                                <div className="text-right hidden sm:block"><div className="text-sm font-bold text-white">{role === 'owner' ? 'Lê Minh' : role === 'manager' ? 'Phạm Hùng' : 'Tuấn Tiger'}</div><div className="text-[10px] text-indigo-400 font-bold uppercase">{role}</div></div>
+                                <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold border-2 border-slate-700 text-xs">{role === 'owner' ? 'LM' : role === 'manager' ? 'PH' : 'TT'}</div>
                             </div>
                         </header>
 
-                        <main className="flex-1 overflow-y-auto p-6 pb-24">
+                        {/* Main Content */}
+                        <main className="flex-1 overflow-y-auto p-4 bg-slate-900 scroll-smooth">
                             {currentView === 'dashboard' && renderDashboard()}
                             {currentView === 'cashin' && (
-                                <div className="space-y-6 animate-fade-in">
-                                    <div className="flex justify-between items-center"><DateFilter value={dateFilter} onChange={setDateFilter} /><button onClick={() => setIsPOSOpen(true)} className="bg-emerald-600 text-white px-4 py-2 rounded font-bold flex items-center"><Icons.Plus className="mr-2" /> Tạo Đơn</button></div>
-                                    <div className="grid grid-cols-4 md:grid-cols-5 gap-3">
+                                <div className="space-y-4 animate-fade-in pb-20">
+                                    <div className="flex justify-between items-center">
+                                        <DateFilter value={dateFilter} onChange={setDateFilter} />
+                                        <button onClick={() => setIsPOSOpen(true)} className="bg-emerald-600 text-white p-2 rounded-lg shadow-lg"><Icons.Plus size={20} /></button>
+                                    </div>
+                                    <div className="grid grid-cols-3 md:grid-cols-5 gap-2 md:gap-3">
                                         {tables.map(t => (
-                                            <div key={t.id} onClick={() => t.status === 'empty' && setIsPOSOpen(true)} className={`aspect-square rounded-xl flex flex-col items-center justify-center border-2 cursor-pointer ${t.status === 'occupied' ? 'bg-rose-900/40 border-rose-500' : 'bg-emerald-900/20 border-emerald-500/30'}`}>
+                                            <div key={t.id} onClick={() => t.status === 'empty' && setIsPOSOpen(true)} className={`aspect-square rounded-xl flex flex-col items-center justify-center border-2 cursor-pointer active:scale-95 transition-transform ${t.status === 'occupied' ? 'bg-rose-900/40 border-rose-500' : 'bg-emerald-900/20 border-emerald-500/30'}`}>
                                                 <span className="font-bold text-lg">{t.id}</span>
-                                                <div className="text-[10px] mt-1 text-center">{t.status === 'occupied' ? <><div className="truncate px-1">{t.customerName}</div><div>{formatCurrency(t.total)}</div></> : <span className="opacity-50">Trống</span>}</div>
+                                                <div className="text-[10px] mt-1 text-center w-full overflow-hidden px-1">{t.status === 'occupied' ? <><div className="truncate">{t.customerName}</div><div className="text-rose-300 font-mono">{formatCurrency(t.total)}</div></> : <span className="opacity-50">Trống</span>}</div>
                                             </div>
                                         ))}
                                     </div>
@@ -753,8 +639,14 @@
                             )}
                             {currentView === 'cashout' && renderCashOut()}
                             {currentView === 'staff' && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in">
-                                    {staffData.map(s => <div key={s.id} className="bg-slate-800 p-4 rounded-lg flex justify-between items-center border border-slate-700"><div><div className="font-bold text-white">{s.name}</div><div className="text-xs text-slate-400">{s.role} - {s.shift}</div></div><div className="text-emerald-400 font-bold">{formatCurrency(s.revenue)}</div></div>)}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 animate-fade-in pb-20">
+                                    {staffData.map(s => <div key={s.id} className="bg-slate-800 p-4 rounded-xl flex justify-between items-center border border-slate-700 shadow-sm">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center font-bold text-slate-300">{s.avatar}</div>
+                                            <div><div className="font-bold text-white text-sm">{s.name}</div><div className="text-xs text-slate-400">{s.role} • {s.shift}</div></div>
+                                        </div>
+                                        <div className="text-emerald-400 font-bold text-sm">{formatCurrency(s.revenue)}</div>
+                                    </div>)}
                                 </div>
                             )}
                             {currentView === 'tasks' && renderTasks()}
